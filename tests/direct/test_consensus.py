@@ -80,7 +80,7 @@ def test_validator_agrees_on_identical_expected_error(
     _accepted_run(direct_vm, direct_deploy, direct_alice, direct_bob)
     direct_vm.clear_mocks()
     mock_pr(direct_vm, {"message": "Not Found"}, status=404)
-    assert direct_vm.run_validator(leader_error=Exception("[EXPECTED] PR_NOT_FOUND")) is True
+    assert direct_vm.run_validator(leader_error=Exception("[EXTERNAL] PR_NOT_FOUND")) is True
 
 
 def test_validator_disagrees_when_leader_lies_about_error(
@@ -88,7 +88,7 @@ def test_validator_disagrees_when_leader_lies_about_error(
 ):
     """Leader claims the PR does not exist to censor a valid claim."""
     _accepted_run(direct_vm, direct_deploy, direct_alice, direct_bob)
-    assert direct_vm.run_validator(leader_error=Exception("[EXPECTED] PR_NOT_FOUND")) is False
+    assert direct_vm.run_validator(leader_error=Exception("[EXTERNAL] PR_NOT_FOUND")) is False
 
 
 def test_validator_agrees_on_transient_errors(direct_vm, direct_deploy, direct_alice, direct_bob):

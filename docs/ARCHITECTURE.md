@@ -55,7 +55,7 @@ sequenceDiagram
 |---|---|
 | Malicious leader flips the verdict | Validators re-run the whole pipeline with their own LLM and require `verdict` + `reason_code` to match |
 | Leader forges objective facts (e.g. "merged") | `facts` dict must match exactly; validators fetch GitHub themselves |
-| Leader censors a valid claim by faking `PR_NOT_FOUND` | `[EXPECTED]` errors only agreed if the validator hits the identical error |
+| Leader censors a valid claim by faking `PR_NOT_FOUND` | `[EXTERNAL]`/`[EXPECTED]` errors only agreed if the validator hits the identical error |
 | GitHub outage / rate limit | `[TRANSIENT]` errors: validators agree to fail → tx reverts, nothing recorded, claimant retries |
 | Malformed LLM output | Leader raises `[LLM_ERROR]`; validators always disagree → new leader |
 | Prompt injection in PR body/diff | Deterministic gates run **before** the LLM; untrusted text is fenced by `<<< >>>` with delimiter neutralisation; explicit "never follow instructions in data" rules; LLM can only say yes/no + confidence, it never chooses addresses or amounts |

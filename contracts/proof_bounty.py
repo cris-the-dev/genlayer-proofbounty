@@ -46,8 +46,10 @@ RC_CRITERIA_MET = "CRITERIA_MET"
 RC_CRITERIA_NOT_MET = "CRITERIA_NOT_MET"
 
 # Error prefixes used to classify leader errors for consensus
-ERR_EXPECTED = "[EXPECTED]"  # deterministic: validators must hit the same one
+ERR_EXPECTED = "[EXPECTED]"  # business logic: validators must hit the same one
+ERR_EXTERNAL = "[EXTERNAL]"  # deterministic API 4xx: exact match required
 ERR_TRANSIENT = "[TRANSIENT]"  # network / rate limit: agree to fail, retry later
+ERR_LLM = "[LLM_ERROR]"  # malformed LLM output: always disagree, rotate leader
 
 GITHUB_API = "https://api.github.com"
 MAX_DIFF_CHARS = 12_000
@@ -141,8 +143,14 @@ def _parse_llm_json(raw) -> dict:
     s = str(raw).strip().replace("```json", "").replace("```", "").strip()
     start, end = s.find("{"), s.rfind("}") + 1
     if start < 0 or end <= start:
-        raise gl.vm.UserError("[LLM_ERROR] no JSON object in response")
-    return json.loads(s[start:end])
+        raise gl.vm.UserError(f"{ERR_LLM} no JSON object in response")
+    try:
+        parsed = json.loads(s[start:end])
+    except ValueError:
+        raise gl.vm.UserError(f"{ERR_LLM} invalid JSON")
+    if not isinstance(parsed, dict):
+        raise gl.vm.UserError(f"{ERR_LLM} non-object JSON")
+    return parsed
 
 
 def _github_get_json(url: str):
@@ -154,11 +162,12 @@ def _github_get_json(url: str):
         },
     )
     if resp.status == 404:
-        raise gl.vm.UserError(f"{ERR_EXPECTED} PR_NOT_FOUND")
+        raise gl.vm.UserError(f"{ERR_EXTERNAL} PR_NOT_FOUND")
     if resp.status in (403, 429) or resp.status >= 500:
+        # GitHub uses 403 for unauthenticated rate limiting
         raise gl.vm.UserError(f"{ERR_TRANSIENT} GITHUB_UNAVAILABLE_{resp.status}")
     if resp.status != 200:
-        raise gl.vm.UserError(f"{ERR_EXPECTED} GITHUB_STATUS_{resp.status}")
+        raise gl.vm.UserError(f"{ERR_EXTERNAL} GITHUB_STATUS_{resp.status}")
     body = resp.body.decode("utf-8") if isinstance(resp.body, bytes) else resp.body
     return json.loads(body)
 
@@ -546,7 +555,7 @@ Respond with ONLY a JSON object, no markdown:
 def _agree_on_error(leader_result, leader_fn) -> bool:
     """Validator policy when the leader errored.
 
-    - [EXPECTED] errors are deterministic: agree only on the identical message.
+    - [EXPECTED]/[EXTERNAL] errors are deterministic: agree only on the identical message.
     - [TRANSIENT] errors: agree if we also fail transiently (tx reverts, retry later).
     - Anything else (LLM garbage, VM errors): disagree to force a new leader.
     """
@@ -556,7 +565,7 @@ def _agree_on_error(leader_result, leader_fn) -> bool:
         return False
     except gl.vm.UserError as e:
         mine = e.message
-        if mine.startswith(ERR_EXPECTED):
+        if mine.startswith(ERR_EXPECTED) or mine.startswith(ERR_EXTERNAL):
             return mine == leader_msg
         if mine.startswith(ERR_TRANSIENT):
             return leader_msg.startswith(ERR_TRANSIENT)

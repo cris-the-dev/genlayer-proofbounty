@@ -22,7 +22,7 @@ committee.
   1. *Deterministic gates* from the GitHub API: correct repo, merged, merged inside the bounty window, closes the issue, carries the claimant's ownership tag.
   2. *LLM judgment* of the diff vs. the acceptance criteria — only reached if every gate passes.
 - **Custom validator** (`gl.vm.run_nondet_unsafe`): verdict, reason code and all facts must match; the free-text summary may differ.
-- **Error classification** (`[EXPECTED]`, `[TRANSIENT]`, `[LLM_ERROR]`) so outages revert cleanly and bad LLM output forces a new leader.
+- **Error classification** (`[EXPECTED]`, `[EXTERNAL]`, `[TRANSIENT]`, `[LLM_ERROR]`, as in the official GenLayer write-contract skill) so outages revert cleanly and bad LLM output forces a new leader.
 - **Prompt-injection hardening**: fenced untrusted data, delimiter neutralisation, LLM never controls money flow.
 - **Ownership proof**: `proofbounty:<your address>` in the PR body binds the PR to a wallet.
 - **Reputation**: earned GEN + wins per contributor, leaderboard, protocol stats.
