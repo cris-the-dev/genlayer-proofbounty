@@ -54,7 +54,7 @@ export function AddressDisplay({
       {showCopy && (
         <button
           onClick={handleCopy}
-          className="opacity-50 hover:opacity-100 transition-opacity p-0.5 hover:bg-white/5 rounded"
+          className="opacity-50 hover:opacity-100 transition-opacity p-0.5 hover:bg-secondary rounded"
           aria-label="Copy address"
         >
           {copied ? (

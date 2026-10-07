@@ -1,117 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { AccountPanel } from "./AccountPanel";
-import { CreateBountyModal } from "./CreateBountyModal";
-import { useStats } from "@/lib/hooks/useProofBounty";
-import { Logo, LogoMark } from "./Logo";
 
-export function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const { data: stats } = useStats();
+// Cross-links between the eight Builders Program submissions.
+const SITES: [string, string][] = [
+  ["01", "https://proofbounty.cristhedev.com"],
+  ["02", "https://proofbounty-v2.cristhedev.com"],
+  ["03", "https://ic-security-audit.cristhedev.com"],
+  ["04", "https://oracle-kit.cristhedev.com"],
+  ["05", "https://workshop.cristhedev.com"],
+  ["06", "https://docs-security.cristhedev.com"],
+  ["07", "https://rainfall-insurance.cristhedev.com"],
+  ["08", "https://dealcourt.cristhedev.com"],
+];
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const threshold = 80;
-
-      setIsScrolled(scrollY > 20);
-
-      // Calculate progress from 0 to 1 for smoother animations
-      const progress = Math.min(Math.max((scrollY - 10) / threshold, 0), 1);
-      setScrollProgress(progress);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Minimal variant with scroll animations
-  const paddingTop = Math.round(scrollProgress * 16); // 0-16px padding
-  const headerHeight = 64 - Math.round(scrollProgress * 8); // 64px to 56px
-
-  // Only apply border radius on desktop (md breakpoint and up)
-  const getBorderRadius = () => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      return Math.round(scrollProgress * 9999); // Fully rounded when scrolled on desktop
-    }
-    return 0; // No rounding on mobile
-  };
-  const borderRadius = getBorderRadius();
-
-  const totalBounties = stats?.bounties ?? 0;
-  const openBounties = stats?.open ?? 0;
-
+export function Navbar({ current }: { current: string }) {
   return (
-    <header
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out"
-      style={{ paddingTop: `${paddingTop}px` }}
-    >
-      <div
-        className="transition-all duration-500 ease-out"
-        style={{
-          width: '100%',
-          maxWidth: isScrolled ? '80rem' : '100%',
-          margin: '0 auto',
-          borderRadius: `${borderRadius}px`,
-        }}
-      >
-        <div
-          className="backdrop-blur-xl border transition-all duration-500 ease-out md:rounded-none"
-          style={{
-            borderColor: `oklch(0.3 0.02 0 / ${0.4 + scrollProgress * 0.4})`,
-            background: `linear-gradient(135deg, oklch(0.18 0.01 0 / ${0.1 + scrollProgress * 0.3}) 0%, oklch(0.15 0.01 0 / ${0.05 + scrollProgress * 0.25}) 50%, oklch(0.16 0.01 0 / ${0.08 + scrollProgress * 0.27}) 100%)`,
-            borderRadius: `${borderRadius}px`,
-            borderWidth: '1px',
-            borderLeftWidth: isScrolled ? '1px' : '0px',
-            borderRightWidth: isScrolled ? '1px' : '0px',
-            borderTopWidth: isScrolled ? '1px' : '0px',
-            boxShadow: isScrolled
-              ? '0 32px 64px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 0 oklch(0.3 0.02 0 / 0.3)'
-              : 'none',
-            backdropFilter: 'blur(16px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          }}
-        >
-          <div
-            className="px-6 transition-all duration-500 mx-auto"
-            style={{
-              maxWidth: isScrolled ? '80rem' : '112rem',
-            }}
-          >
-            <div
-              className="flex items-center justify-between transition-all duration-500"
-              style={{ height: `${headerHeight}px` }}
+    <header className="border-b border-border bg-background">
+      <div className="max-w-5xl mx-auto px-4 h-11 flex items-center justify-between gap-4 text-sm">
+        <span className="font-mono text-muted-foreground truncate hidden sm:inline">
+          cristhedev <span className="text-border">/</span> genlayer builds
+        </span>
+        <nav className="flex min-w-0 font-mono text-xs overflow-x-auto">
+          {SITES.map(([n, href]) => (
+            <a
+              key={n}
+              href={href}
+              aria-current={n === current ? "page" : undefined}
+              className={`px-1.5 py-1 ${n === current ? "text-foreground underline underline-offset-4" : "text-muted-foreground hover:text-foreground"}`}
             >
-              {/* Left: Logo */}
-              <div className="flex items-center gap-3">
-                {/* Show mark only on mobile, full logo on desktop */}
-                <LogoMark size="md" className="flex md:hidden" />
-                <Logo size="md" className="hidden md:flex" />
-                <span className="text-lg md:text-xl font-bold ml-2">ProofBounty</span>
-              </div>
-
-              {/* Center: Stats */}
-              <div className="hidden md:flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Bounties:</span>
-                  <span className="text-foreground font-bold text-accent">{totalBounties}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Open:</span>
-                  <span className="text-foreground font-bold text-accent">{openBounties}</span>
-                </div>
-              </div>
-
-              {/* Right: Actions */}
-              <div className="flex items-center gap-3">
-                <CreateBountyModal />
-                <AccountPanel />
-              </div>
-            </div>
-          </div>
+              {n}
+            </a>
+          ))}
+        </nav>
+      </div>
+      <div className="max-w-5xl mx-auto px-4 py-5 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold">ProofBounty{current === "02" ? " v2" : ""}</h1>
+          <p className="text-muted-foreground mt-1 max-w-xl">
+            Bounties on GitHub issues, paid out when GenLayer validators agree the merged PR meets the
+            criteria.
+          </p>
         </div>
+        <AccountPanel />
       </div>
     </header>
   );

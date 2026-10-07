@@ -75,11 +75,11 @@ export function CreateBountyModal() {
   return (
     <Dialog open={open} onOpenChange={(o) => !create.isPending && setOpen(o)}>
       <DialogTrigger asChild>
-        <Button variant="gradient" disabled={!isConnected}>
+        <Button variant={isConnected ? "default" : "outline"} disabled={!isConnected} title={isConnected ? undefined : "Connect a wallet first"}>
           <Plus className="w-4 h-4" /> Post bounty
         </Button>
       </DialogTrigger>
-      <DialogContent className="brand-card border-2 sm:max-w-[560px]">
+      <DialogContent className="panel sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle>Post a bounty</DialogTitle>
           <DialogDescription>
@@ -134,7 +134,7 @@ export function CreateBountyModal() {
             </div>
           </div>
           {err && <p className="text-sm text-destructive">{err}</p>}
-          <Button type="submit" variant="gradient" className="w-full" disabled={create.isPending}>
+          <Button type="submit" variant="default" className="w-full" disabled={create.isPending}>
             {create.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" /> Waiting for consensus…

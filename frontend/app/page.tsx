@@ -3,67 +3,62 @@
 import { Navbar } from "@/components/Navbar";
 import { BountyList } from "@/components/BountyList";
 import { Leaderboard } from "@/components/Leaderboard";
+import { shortAddr } from "@/lib/format";
+import { getNetworkName } from "@/lib/genlayer/network";
+
+const SITE = "02";
+const REPO = "https://github.com/cris-the-dev/genlayer-proofbounty/tree/v2.0.0";
+const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ?? "";
+const EXPLORER = "https://explorer-bradbury.genlayer.com/address/";
+const NETWORK_LABEL: Record<string, string> = { testnetBradbury: "testnet bradbury", testnetAsimov: "testnet asimov", studionet: "studionet", localnet: "localnet" };
 
 const STEPS = [
-  {
-    title: "1. Escrow a bounty",
-    body: "Pick a GitHub issue, write verifiable acceptance criteria and lock GEN in the contract. Funds can only go to a valid claimant, or back to you after the deadline.",
-  },
-  {
-    title: "2. Merge a PR",
-    body: "Contributors open a PR that closes the issue and carries their wallet tag (proofbounty:0x…), proving which address owns the work.",
-  },
-  {
-    title: "3. Validators judge",
-    body: "GenLayer validators fetch the PR from GitHub, check objective facts, then independently ask their own LLMs whether the diff meets the criteria. Consensus releases the reward.",
-  },
+  ["Escrow", "Pick a GitHub issue, write acceptance criteria a reviewer could check, and lock GEN. It goes to a valid claimant, or back to you after the deadline."],
+  ["Merge", "The contributor's PR closes the issue and includes their wallet tag (proofbounty:0x…) so the payout address is tied to the work."],
+  ["Judge", "Validators fetch the PR, check the facts (merged, linked, in the window), then each asks its own LLM whether the diff meets the criteria. An accepted claim waits out a challenge window; a funder can post a bond to have it re-judged."],
 ];
 
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow pt-20 pb-12 px-4 md:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">ProofBounty</h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Open-source bounties paid by consensus, not by trust.
-              <br />
-              Merged code in, GEN out — judged by GenLayer Intelligent Contracts.
-            </p>
-          </div>
+      <Navbar current={SITE} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-            <div className="lg:col-span-8 animate-slide-up">
-              <BountyList />
-            </div>
-            <div className="lg:col-span-4 animate-slide-up" style={{ animationDelay: "100ms" }}>
-              <Leaderboard />
-            </div>
+      <div className="border-b border-border">
+        <dl className="max-w-5xl mx-auto px-4 py-2 flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs text-muted-foreground">
+          <div>
+            <dt className="inline">contract </dt>
+            <dd className="inline">
+              {CONTRACT ? (
+                <a className="text-accent hover:underline" href={EXPLORER + CONTRACT}>{shortAddr(CONTRACT)} ↗</a>
+              ) : "not set"}
+            </dd>
           </div>
+          <div><dt className="inline">network </dt><dd className="inline text-foreground">{NETWORK_LABEL[getNetworkName()] ?? getNetworkName()}</dd></div>
+          <div><a className="text-accent hover:underline" href={REPO}>source ↗</a></div>
+        </dl>
+      </div>
 
-          <div className="mt-8 brand-card p-6 md:p-8 animate-fade-in">
-            <h2 className="text-2xl font-bold mb-4">How it works</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {STEPS.map((s) => (
-                <div key={s.title} className="space-y-2">
-                  <div className="text-accent font-bold text-lg">{s.title}</div>
-                  <p className="text-sm text-muted-foreground">{s.body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <main className="flex-grow max-w-5xl w-full mx-auto px-4 py-6 grid gap-8 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_260px]">
+        <BountyList />
+        <Leaderboard />
       </main>
-      <footer className="border-t border-white/10 py-2">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-6 text-sm text-muted-foreground">
-          <a href="https://genlayer.com" target="_blank" rel="noopener noreferrer" className="hover:text-accent">
-            Powered by GenLayer
-          </a>
-          <a href="https://docs.genlayer.com" target="_blank" rel="noopener noreferrer" className="hover:text-accent">
-            Docs
-          </a>
+
+      <section className="border-t border-border">
+        <ol className="max-w-5xl mx-auto px-4 py-6 grid gap-6 md:grid-cols-3 text-sm">
+          {STEPS.map(([title, body], i) => (
+            <li key={title}>
+              <div className="font-mono text-xs text-muted-foreground">0{i + 1}</div>
+              <div className="font-semibold mt-1">{title}</div>
+              <p className="text-muted-foreground mt-1">{body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <footer className="border-t border-border">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex gap-4 text-xs text-muted-foreground">
+          <span>Built on <a className="hover:text-foreground underline" href="https://genlayer.com">GenLayer</a></span>
+          <a className="hover:text-foreground underline" href="https://docs.genlayer.com">Docs</a>
         </div>
       </footer>
     </div>

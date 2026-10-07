@@ -99,14 +99,13 @@ export function AccountPanel() {
     return (
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
-          <Button variant="gradient" disabled={isLoading}>
-            <User className="w-4 h-4 mr-2" />
-            Connect Wallet
+          <Button variant="outline" disabled={isLoading}>
+            Connect wallet
           </Button>
         </DialogTrigger>
-        <DialogContent className="brand-card border-2">
+        <DialogContent className="panel">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
+            <DialogTitle className="text-lg font-semibold">
               Connect to GenLayer
             </DialogTitle>
             <DialogDescription>
@@ -117,7 +116,7 @@ export function AccountPanel() {
           <div className="space-y-4 mt-4">
             {!isMetaMaskInstalled ? (
               <>
-                <Alert variant="default" className="bg-accent/10 border-accent/20">
+                <Alert variant="default" className="bg-secondary border-border">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>MetaMask Not Detected</AlertTitle>
                   <AlertDescription>
@@ -128,14 +127,14 @@ export function AccountPanel() {
 
                 <Button
                   onClick={() => window.open(METAMASK_INSTALL_URL, "_blank")}
-                  variant="gradient"
+                  variant="default"
                   className="w-full h-14 text-lg"
                 >
                   <ExternalLink className="w-5 h-5 mr-2" />
                   Install MetaMask
                 </Button>
 
-                <div className="p-4 rounded-lg bg-muted/10 border border-muted/20">
+                <div className="p-4 rounded-lg bg-secondary border border-border">
                   <p className="text-xs text-muted-foreground">
                     After installing MetaMask, refresh this page and click
                     &quot;Connect Wallet&quot; again.
@@ -146,7 +145,7 @@ export function AccountPanel() {
               <>
                 <Button
                   onClick={handleConnect}
-                  variant="gradient"
+                  variant="default"
                   className="w-full h-14 text-lg"
                   disabled={isConnecting}
                 >
@@ -162,7 +161,7 @@ export function AccountPanel() {
                   </Alert>
                 )}
 
-                <div className="p-4 rounded-lg bg-muted/10 border border-muted/20">
+                <div className="p-4 rounded-lg bg-secondary border border-border">
                   <p className="text-xs text-muted-foreground">
                     This will open MetaMask and prompt you to:
                   </p>
@@ -183,17 +182,10 @@ export function AccountPanel() {
   // Connected state
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <div className="flex items-center gap-4">
-        <div className="brand-card px-4 py-2 flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-accent" />
-            <AddressDisplay address={address} maxLength={12} />
-          </div>
-          <div className="h-4 w-px bg-white/10" />
-          <div className="flex items-center gap-1">
-            <span className="text-sm font-semibold text-accent">{points}</span>
-            <span className="text-xs text-muted-foreground">pts</span>
-          </div>
+      <div className="flex items-center gap-2">
+        <div className="border border-border rounded-md px-3 h-9 flex items-center gap-3 font-mono text-xs">
+          <AddressDisplay address={address} maxLength={12} />
+          <span className="text-muted-foreground tabular-nums" title="Earned from bounties">{points}</span>
         </div>
 
         <DialogTrigger asChild>
@@ -203,9 +195,9 @@ export function AccountPanel() {
         </DialogTrigger>
       </div>
 
-      <DialogContent className="brand-card border-2">
+      <DialogContent className="panel">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-lg font-semibold">
             Wallet Details
           </DialogTitle>
           <DialogDescription>
@@ -214,17 +206,17 @@ export function AccountPanel() {
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          <div className="brand-card p-4 space-y-2">
+          <div className="panel p-4 space-y-2">
             <p className="text-sm text-muted-foreground">Your Address</p>
             <code className="text-sm font-mono break-all">{address}</code>
           </div>
 
-          <div className="brand-card p-4 space-y-2">
+          <div className="panel p-4 space-y-2">
             <p className="text-sm text-muted-foreground">Earned from bounties</p>
-            <p className="text-2xl font-bold text-accent">{points}</p>
+            <p className="font-mono text-lg tabular-nums">{points}</p>
           </div>
 
-          <div className="brand-card p-4 space-y-2">
+          <div className="panel p-4 space-y-2">
             <p className="text-sm text-muted-foreground">Network Status</p>
             <div className="flex items-center gap-2">
               <div
@@ -243,7 +235,7 @@ export function AccountPanel() {
           </div>
 
           {!isOnCorrectNetwork && (
-            <Alert variant="default" className="bg-yellow-500/10 border-yellow-500/20">
+            <Alert variant="default" className="bg-secondary border-border">
               <AlertCircle className="h-4 w-4 text-yellow-500" />
               <AlertTitle>Network Warning</AlertTitle>
               <AlertDescription>
@@ -261,7 +253,7 @@ export function AccountPanel() {
             </Alert>
           )}
 
-          <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
+          <div className="mt-6 pt-4 border-t border-border space-y-3">
             <Button
               onClick={handleSwitchAccount}
               variant="outline"
@@ -283,7 +275,7 @@ export function AccountPanel() {
             </Button>
           </div>
 
-          <div className="p-4 rounded-lg bg-muted/10 border border-muted/20">
+          <div className="p-4 rounded-lg bg-secondary border border-border">
             <p className="text-xs text-muted-foreground">
               Use &quot;Switch Account&quot; to select a different MetaMask
               account. Use &quot;Disconnect&quot; to remove this site from

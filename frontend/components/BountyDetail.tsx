@@ -68,7 +68,7 @@ export function BountyDetail({
 
   return (
     <Dialog open={!!bounty} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="brand-card border-2 sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="panel sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {bounty.title}
@@ -132,7 +132,7 @@ export function BountyDetail({
                 : "The challenge window is closed — anyone can release the payout."}
             </p>
             {!windowOpen && (
-              <Button variant="gradient" disabled={finalize.isPending} onClick={() => finalize.mutate(bounty.id)}>
+              <Button variant="default" disabled={finalize.isPending} onClick={() => finalize.mutate(bounty.id)}>
                 {finalize.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Release payout
               </Button>
             )}
@@ -227,7 +227,7 @@ export function BountyDetail({
                 <Label htmlFor="pr">Merged PR number</Label>
                 <Input id="pr" type="number" min={1} value={pr} onChange={(e) => setPr(e.target.value)} />
               </div>
-              <Button type="submit" variant="gradient" disabled={!address || submit.isPending}>
+              <Button type="submit" variant="default" disabled={!address || submit.isPending}>
                 {submit.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" /> Validators judging…
