@@ -71,6 +71,20 @@ cp .env.example .env      # paste NEXT_PUBLIC_CONTRACT_ADDRESS
 npm install && npm run dev
 ```
 
+## Live deployment
+
+Testnet Bradbury (chainId 4221): [`0x36515dE849EC4F2C8f9A3B488FD77eC188f4eC81`](https://explorer-bradbury.genlayer.com/address/0x36515dE849EC4F2C8f9A3B488FD77eC188f4eC81)  
+Live app: https://proofbounty.cristhedev.com
+
+Bradbury rejects deploy transactions with more than ~20 KB of code (`gas limit too high`).
+The deployed code was produced from `contracts/` with [`deploy/shrink.py`](deploy/shrink.py), which
+removes docstrings and comments. It asserts the result has the same AST as the source,
+and the full direct suite passes against it. To reproduce it byte-for-byte:
+
+```bash
+python deploy/shrink.py contracts/proof_bounty.py build/proof_bounty.py
+```
+
 ## Contract API
 
 | Method | Kind | Description |
