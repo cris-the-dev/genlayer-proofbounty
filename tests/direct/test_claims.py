@@ -15,7 +15,7 @@ from tests.direct.helpers import (
 )
 
 
-def test_accepted_claim_pays_out(direct_vm, direct_deploy, direct_alice, direct_bob):
+def test_accepted_claim_enters_challenge_window(direct_vm, direct_deploy, direct_alice, direct_bob):
     contract, _ = deploy_with_bounty(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_bob
     mock_pr(direct_vm, pr_payload(direct_bob))
@@ -26,26 +26,20 @@ def test_accepted_claim_pays_out(direct_vm, direct_deploy, direct_alice, direct_
     assert result["verdict"] == "ACCEPTED"
     assert result["reason_code"] == "CRITERIA_MET"
     b = contract.get_bounty(0)
-    assert b["status"] == "PAID"
-    assert b["winner"] == to_hex(direct_bob)
-    assert b["winning_pr"] == 7
+    assert b["status"] == "PENDING"
+    assert b["pending_claimant"] == to_hex(direct_bob)
+    assert b["pending_pr"] == 7
+    assert result["payout_at"] == b["payout_at"]
+    assert b["winner"] == ""
     assert b["claim_count"] == 1
 
     claims = contract.get_claims(0)
     assert len(claims) == 1
     assert claims[0]["claimant"] == to_hex(direct_bob)
     assert claims[0]["summary"] == "Adds --json flag with tests."
-
-    assert contract.get_contributor(to_hex(direct_bob)) == {
-        "address": to_hex(direct_bob),
-        "earned": REWARD,
-        "wins": 1,
-    }
-    assert contract.get_leaderboard()[0]["address"] == to_hex(direct_bob)
-    stats = contract.get_stats()
-    assert stats["total_paid"] == REWARD
-    assert stats["total_escrowed"] == 0
-    assert stats["open"] == 0
+    # Nothing paid until the window closes.
+    assert contract.get_contributor(to_hex(direct_bob))["earned"] == 0
+    assert contract.get_stats()["pending"] == 1
 
 
 def test_llm_rejection_keeps_bounty_open(direct_vm, direct_deploy, direct_alice, direct_bob):
@@ -157,7 +151,7 @@ def test_second_pr_can_win_after_rejection(direct_vm, direct_deploy, direct_alic
     assert len(contract.get_claims(0)) == 2
 
 
-def test_cannot_claim_paid_bounty(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+def test_cannot_claim_pending_bounty(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
     contract, _ = deploy_with_bounty(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_bob
     mock_pr(direct_vm, pr_payload(direct_bob))
@@ -166,7 +160,7 @@ def test_cannot_claim_paid_bounty(direct_vm, direct_deploy, direct_alice, direct
 
     direct_vm.sender = direct_charlie
     with direct_vm.expect_revert("Bounty is not open"):
-        contract.submit_claim(0, 9)
+        contract.submit_claim(0, 9)  # PENDING bounties accept no new claims
 
 
 def test_creator_cannot_claim(direct_vm, direct_deploy, direct_alice):

@@ -2,8 +2,8 @@
  * TypeScript mirrors of the ProofBounty contract view outputs.
  */
 
-export type BountyStatus = "OPEN" | "PAID" | "CANCELLED";
-export type Verdict = "ACCEPTED" | "REJECTED";
+export type BountyStatus = "OPEN" | "PENDING" | "PAID" | "CANCELLED";
+export type Verdict = "ACCEPTED" | "REJECTED" | "OVERTURNED";
 
 export interface Bounty {
   id: number;
@@ -19,6 +19,23 @@ export interface Bounty {
   winner: string;
   winning_pr: number;
   claim_count: number;
+  challenge_period: number;
+  funder_count: number;
+  pending_claimant: string;
+  pending_pr: number;
+  payout_at: number;
+  challenged: boolean;
+}
+
+export interface Challenge {
+  bounty_id: number;
+  challenger: string;
+  pr_number: number;
+  bond: bigint;
+  reason: string;
+  outcome: "UPHELD" | "OVERTURNED";
+  summary: string;
+  resolved_at: number;
 }
 
 export interface Claim {
@@ -40,9 +57,12 @@ export interface LeaderboardEntry {
 export interface Stats {
   bounties: number;
   open: number;
+  pending: number;
   claims: number;
+  challenges: number;
   total_escrowed: bigint;
   total_paid: bigint;
+  total_refunded: bigint;
 }
 
 export interface TransactionReceipt {

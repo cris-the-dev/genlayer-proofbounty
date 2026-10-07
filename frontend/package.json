@@ -1,5 +1,5 @@
 {
-  "name": "proofbounty-frontend",
+  "name": "proofbounty-v2-frontend",
   "version": "1.0.0",
   "description": "ProofBounty \u2014 AI-verified open-source bounties on GenLayer",
   "main": "index.js",

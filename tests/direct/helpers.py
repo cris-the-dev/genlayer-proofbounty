@@ -7,6 +7,7 @@ ISSUE = 42
 CRITERIA = "Add a --json flag to the CLI that prints results as JSON, with unit tests."
 DAY = 24 * 3600
 REWARD = 10**18  # 1 GEN
+CHALLENGE = 2 * 24 * 3600  # 48h challenge window
 
 PR_URL_RE = r"api\.github\.com/repos/acme/widget/pulls/{n}$"
 FILES_URL_RE = r"api\.github\.com/repos/acme/widget/pulls/{n}/files"
@@ -85,6 +86,6 @@ def deploy_with_bounty(direct_vm, direct_deploy, creator, duration=7 * DAY):
     contract = direct_deploy("contracts/proof_bounty.py")
     direct_vm.sender = creator
     direct_vm.value = REWARD
-    bounty_id = contract.create_bounty(REPO, ISSUE, "JSON output for CLI", CRITERIA, duration)
+    bounty_id = contract.create_bounty(REPO, ISSUE, "JSON output for CLI", CRITERIA, duration, CHALLENGE)
     direct_vm.value = 0
     return contract, bounty_id

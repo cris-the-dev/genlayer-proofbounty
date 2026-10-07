@@ -12,7 +12,9 @@ export function Leaderboard() {
     <div className="space-y-6">
       <div className="brand-card p-6 grid grid-cols-2 gap-4 text-center">
         <Stat label="Open bounties" value={stats ? String(stats.open) : "–"} />
+        <Stat label="In challenge window" value={stats ? String(stats.pending) : "–"} />
         <Stat label="Claims judged" value={stats ? String(stats.claims) : "–"} />
+        <Stat label="Appeals" value={stats ? String(stats.challenges) : "–"} />
         <Stat label="In escrow" value={stats ? `${formatGen(stats.total_escrowed, 2)} GEN` : "–"} />
         <Stat label="Paid out" value={stats ? `${formatGen(stats.total_paid, 2)} GEN` : "–"} />
       </div>

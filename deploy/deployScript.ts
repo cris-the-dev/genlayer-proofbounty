@@ -46,7 +46,7 @@ export default async function main(client: GenLayerClient<any>) {
         ? receipt.data.contract_address
         : (receipt.txDataDecoded as DecodedDeployData)?.contractAddress;
 
-    console.log(`ProofBounty deployed at address: ${deployedContractAddress}`);
+    console.log(`ProofBounty v2 deployed at address: ${deployedContractAddress}`);
     console.log(`Set NEXT_PUBLIC_CONTRACT_ADDRESS=${deployedContractAddress} in frontend/.env`);
   } catch (error) {
     throw new Error(`Error during deployment: ${error}`);

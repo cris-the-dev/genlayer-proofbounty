@@ -1,17 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Copy, ExternalLink, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Copy, ExternalLink, Gavel, Loader2, XCircle } from "lucide-react";
 import type { Bounty } from "@/lib/contracts/types";
 import { REASON_LABELS } from "@/lib/contracts/types";
 import {
   useCancelBounty,
+  useChallenge,
+  useChallengeClaim,
+  useClaimRefund,
   useClaimTag,
   useClaims,
+  useContribution,
+  useFinalizePayout,
+  useFundBounty,
   useSubmitClaim,
 } from "@/lib/hooks/useProofBounty";
 import { useWallet } from "@/lib/genlayer/wallet";
-import { formatGen, shortAddr, timeLeft } from "@/lib/format";
+import { formatGen, parseGen, shortAddr, timeLeft } from "@/lib/format";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
@@ -36,9 +42,23 @@ export function BountyDetail({
   const tag = useClaimTag(address);
   const submit = useSubmitClaim();
   const cancel = useCancelBounty();
+  const fund = useFundBounty();
+  const challenge = useChallengeClaim();
+  const finalize = useFinalizePayout();
+  const refund = useClaimRefund();
+  const challengeInfo = useChallenge(bounty?.id ?? null);
+  const contribution = useContribution(bounty?.id ?? null, address);
   const [pr, setPr] = useState("");
+  const [fundAmount, setFundAmount] = useState("0.5");
+  const [reason, setReason] = useState("");
 
   if (!bounty) return null;
+
+  const myContribution = contribution.data ?? 0n;
+  const isFunder = myContribution > 0n;
+  const minBond = bounty.reward / 10n > 0n ? bounty.reward / 10n : 1n;
+  const pending = bounty.status === "PENDING";
+  const windowOpen = pending && Date.now() / 1000 <= bounty.payout_at;
 
   const now = Date.now() / 1000;
   const isCreator = address?.toLowerCase() === bounty.creator.toLowerCase();
@@ -67,7 +87,112 @@ export function BountyDetail({
           <p className="text-sm whitespace-pre-wrap text-muted-foreground">{bounty.criteria}</p>
         </section>
 
-        {open && !expired && !isCreator && (
+        {open && !expired && (
+          <form
+            className="flex items-end gap-2 border-t pt-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              try {
+                const amount = parseGen(fundAmount);
+                if (amount > 0n) fund.mutate({ bountyId: bounty.id, amount });
+              } catch {}
+            }}
+          >
+            <div className="flex-1 space-y-1">
+              <Label htmlFor="fund">
+                Add to the reward (GEN) · {bounty.funder_count} funder(s)
+                {isFunder ? ` · you: ${formatGen(myContribution)} GEN` : ""}
+              </Label>
+              <Input id="fund" value={fundAmount} onChange={(e) => setFundAmount(e.target.value)} />
+            </div>
+            <Button type="submit" variant="outline" disabled={!address || fund.isPending}>
+              {fund.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Fund
+            </Button>
+          </form>
+        )}
+
+        {pending && (
+          <section className="space-y-3 border-t pt-4">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <Gavel className="w-4 h-4" /> Payout pending
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Validators accepted{" "}
+              <a
+                className="underline"
+                target="_blank"
+                rel="noreferrer"
+                href={`https://github.com/${bounty.repo}/pull/${bounty.pending_pr}`}
+              >
+                PR #{bounty.pending_pr}
+              </a>{" "}
+              by <span className="font-mono">{shortAddr(bounty.pending_claimant)}</span>.{" "}
+              {windowOpen
+                ? `Funders can challenge for ${timeLeft(bounty.payout_at)}.`
+                : "The challenge window is closed — anyone can release the payout."}
+            </p>
+            {!windowOpen && (
+              <Button variant="gradient" disabled={finalize.isPending} onClick={() => finalize.mutate(bounty.id)}>
+                {finalize.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Release payout
+              </Button>
+            )}
+            {windowOpen && isFunder && !bounty.challenged && (
+              <form
+                className="space-y-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (reason.trim().length >= 10)
+                    challenge.mutate({ bountyId: bounty.id, reason: reason.trim(), bond: minBond });
+                }}
+              >
+                <Label htmlFor="reason">
+                  Challenge (bond {formatGen(minBond)} GEN — lost to the contributor if the appeal
+                  panel upholds the payout)
+                </Label>
+                <textarea
+                  id="reason"
+                  rows={3}
+                  maxLength={1000}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Explain which acceptance criterion the diff fails to meet."
+                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                />
+                <Button type="submit" variant="destructive" disabled={challenge.isPending}>
+                  {challenge.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Appeal panel deliberating…
+                    </>
+                  ) : (
+                    "Challenge payout"
+                  )}
+                </Button>
+              </form>
+            )}
+          </section>
+        )}
+
+        {challengeInfo.data && (
+          <section className="rounded-md border p-3 text-sm space-y-1">
+            <div className="flex items-center gap-2 font-medium">
+              <Gavel className="w-4 h-4" /> Appeal on PR #{challengeInfo.data.pr_number}
+              <Badge variant={challengeInfo.data.outcome === "UPHELD" ? "default" : "destructive"}>
+                {challengeInfo.data.outcome}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground">“{challengeInfo.data.reason}”</p>
+            <p>{challengeInfo.data.summary}</p>
+          </section>
+        )}
+
+        {bounty.status === "CANCELLED" && isFunder && (
+          <Button variant="outline" disabled={refund.isPending} onClick={() => refund.mutate(bounty.id)}>
+            {refund.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Withdraw my {formatGen(myContribution)} GEN
+          </Button>
+        )}
+
+        {open && !expired && !isCreator && !isFunder && (
           <section className="space-y-3 border-t pt-4">
             <h3 className="font-semibold text-sm">Claim this bounty</h3>
             <ol className="text-sm text-muted-foreground list-decimal ml-5 space-y-1">
@@ -118,7 +243,7 @@ export function BountyDetail({
         {open && isCreator && expired && (
           <Button variant="outline" disabled={cancel.isPending} onClick={() => cancel.mutate(bounty.id)}>
             {cancel.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            Deadline passed — cancel & refund
+            Deadline passed — close bounty (funders then withdraw)
           </Button>
         )}
 

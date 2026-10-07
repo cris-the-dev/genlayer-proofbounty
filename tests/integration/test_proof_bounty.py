@@ -34,7 +34,7 @@ def test_bounty_lifecycle_and_real_claim():
     assert contract.get_stats(args=[]).call()["bounties"] == 0
 
     receipt = contract.create_bounty(
-        args=[REAL_REPO, 1, "Integration bounty", CRITERIA, 7 * DAY]
+        args=[REAL_REPO, 1, "Integration bounty", CRITERIA, 7 * DAY, DAY]
     ).transact(value=REWARD)
     assert tx_execution_succeeded(receipt)
 
@@ -65,9 +65,32 @@ def test_bounty_lifecycle_and_real_claim():
 def test_invalid_inputs_fail():
     contract = _deploy()
     receipt = contract.create_bounty(
-        args=["not a repo", 1, "x", CRITERIA, DAY]
+        args=["not a repo", 1, "x", CRITERIA, DAY, DAY]
     ).transact(value=REWARD)
     assert tx_execution_failed(receipt)
 
-    receipt = contract.create_bounty(args=[REAL_REPO, 1, "x", CRITERIA, DAY]).transact()
+    receipt = contract.create_bounty(args=[REAL_REPO, 1, "x", CRITERIA, DAY, DAY]).transact()
     assert tx_execution_failed(receipt)
+
+
+@pytest.mark.integration
+def test_crowdfunding_and_refund_paths():
+    contract = _deploy()
+    from gltest import get_accounts
+
+    funder = get_accounts()[2]
+    assert tx_execution_succeeded(
+        contract.create_bounty(args=[REAL_REPO, 2, "Crowdfunded", CRITERIA, 7 * DAY, DAY]).transact(
+            value=REWARD
+        )
+    )
+    as_funder = contract.connect(funder)
+    assert tx_execution_succeeded(as_funder.fund_bounty(args=[0]).transact(value=2 * REWARD))
+
+    bounty = contract.get_bounty(args=[0]).call()
+    assert bounty["reward"] == 3 * REWARD
+    assert bounty["funder_count"] == 2
+    assert contract.get_contribution(args=[0, funder.address]).call() == 2 * REWARD
+
+    # Refund only after cancellation (which requires the deadline to pass).
+    assert tx_execution_failed(as_funder.claim_refund(args=[0]).transact())

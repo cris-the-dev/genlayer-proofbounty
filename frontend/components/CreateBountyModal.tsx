@@ -29,6 +29,7 @@ export function CreateBountyModal() {
     title: "",
     criteria: "",
     days: "14",
+    challengeHours: "48",
     reward: "1",
   });
   const [err, setErr] = useState("");
@@ -46,6 +47,9 @@ export function CreateBountyModal() {
     if (form.criteria.trim().length < 20) return setErr("Criteria must be at least 20 chars");
     const days = parseFloat(form.days);
     if (!(days >= 1 / 24 && days <= 365)) return setErr("Duration must be 1 hour – 365 days");
+    const challengeHours = parseFloat(form.challengeHours);
+    if (!(challengeHours >= 1 && challengeHours <= 168))
+      return setErr("Challenge window must be 1 – 168 hours");
     let reward: bigint;
     try {
       reward = parseGen(form.reward);
@@ -61,6 +65,7 @@ export function CreateBountyModal() {
         title: form.title.trim(),
         criteria: form.criteria.trim(),
         durationSeconds: Math.round(days * 86400),
+        challengePeriodSeconds: Math.round(challengeHours * 3600),
         reward,
       },
       { onSuccess: () => setOpen(false) },
@@ -78,8 +83,8 @@ export function CreateBountyModal() {
         <DialogHeader>
           <DialogTitle>Post a bounty</DialogTitle>
           <DialogDescription>
-            The reward is escrowed in the contract and released automatically when GenLayer
-            validators agree a merged PR meets your criteria.
+            The reward is escrowed in the contract. When GenLayer validators accept a merged PR,
+            funders get a challenge window to appeal before the payout is released.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -109,7 +114,7 @@ export function CreateBountyModal() {
               className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label htmlFor="reward">Reward (GEN)</Label>
               <Input id="reward" value={form.reward} onChange={set("reward")} />
@@ -117,6 +122,15 @@ export function CreateBountyModal() {
             <div className="space-y-1">
               <Label htmlFor="days">Duration (days)</Label>
               <Input id="days" type="number" step="0.5" value={form.days} onChange={set("days")} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="challenge">Challenge window (h)</Label>
+              <Input
+                id="challenge"
+                type="number"
+                value={form.challengeHours}
+                onChange={set("challengeHours")}
+              />
             </div>
           </div>
           {err && <p className="text-sm text-destructive">{err}</p>}

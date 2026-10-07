@@ -88,7 +88,15 @@ function useContractMutation<TArgs>(
       return run(contract, args);
     },
     onSuccess: () => {
-      for (const key of ["bounties", "claims", "stats", "leaderboard", "contributor"]) {
+      for (const key of [
+        "bounties",
+        "claims",
+        "stats",
+        "leaderboard",
+        "contributor",
+        "challenge",
+        "contribution",
+      ]) {
         queryClient.invalidateQueries({ queryKey: [key] });
       }
       success(messages.ok);
@@ -115,5 +123,52 @@ export function useCancelBounty() {
   return useContractMutation((c, id: number) => c.cancelBounty(id), {
     ok: "Bounty cancelled and refunded",
     fail: "Failed to cancel bounty",
+  });
+}
+
+export function useChallenge(bountyId: number | null) {
+  const contract = useProofBountyContract();
+  return useQuery({
+    queryKey: ["challenge", bountyId],
+    queryFn: () => contract!.getChallenge(bountyId!),
+    enabled: !!contract && bountyId !== null,
+  });
+}
+
+export function useContribution(bountyId: number | null, address: string | null) {
+  const contract = useProofBountyContract();
+  return useQuery({
+    queryKey: ["contribution", bountyId, address],
+    queryFn: () => contract!.getContribution(bountyId!, address!),
+    enabled: !!contract && bountyId !== null && !!address,
+  });
+}
+
+export function useFundBounty() {
+  return useContractMutation(
+    (c, p: { bountyId: number; amount: bigint }) => c.fundBounty(p.bountyId, p.amount),
+    { ok: "Bounty funded", fail: "Funding failed" },
+  );
+}
+
+export function useChallengeClaim() {
+  return useContractMutation(
+    (c, p: { bountyId: number; reason: string; bond: bigint }) =>
+      c.challengeClaim(p.bountyId, p.reason, p.bond),
+    { ok: "Appeal panel has ruled", fail: "Challenge failed" },
+  );
+}
+
+export function useFinalizePayout() {
+  return useContractMutation((c, id: number) => c.finalizePayout(id), {
+    ok: "Payout released",
+    fail: "Finalize failed",
+  });
+}
+
+export function useClaimRefund() {
+  return useContractMutation((c, id: number) => c.claimRefund(id), {
+    ok: "Refund sent",
+    fail: "Refund failed",
   });
 }

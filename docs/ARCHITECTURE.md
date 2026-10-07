@@ -1,4 +1,4 @@
-# ProofBounty — Architecture & Security Notes
+# ProofBounty v2 — Architecture & Security Notes
 
 ## Components
 
@@ -36,18 +36,40 @@ sequenceDiagram
     V->>G: re-fetch independently
     Note over V: re-derive facts + own LLM verdict<br/>accept iff verdict, reason_code and facts match
     V-->>L: agree / disagree (majority decides; disagreement rotates leader)
-    Note over L,V: settlement is deterministic:<br/>record claim, pay winner via emit_transfer
+    Note over L,V: settlement is deterministic:<br/>record claim; ACCEPTED → PENDING (challenge window)
+```
+
+## Appeal (one `challenge_claim` transaction)
+
+```mermaid
+sequenceDiagram
+    participant F as Funder (challenger)
+    participant P as Appeal panel (validators)
+    participant G as GitHub API
+    F->>P: challenge_claim(bounty_id, reason) + bond ≥ 10%
+    P->>G: re-fetch PR + diff
+    Note over P: same gates; LLM prompt adds fenced challenge text<br/>"argument, not evidence"
+    Note over P: validators compare verdict + reason_code + facts
+    alt UPHELD
+        P-->>F: bond → contributor; reward → contributor; PAID
+    else OVERTURNED
+        P-->>F: bond refunded; claim OVERTURNED; bounty OPEN
+    end
 ```
 
 ## State
 
 | Field | Type | Purpose |
 |---|---|---|
-| `bounties` | `DynArray[Bounty]` | id = index; escrow amount, window, status, winner |
+| `bounties` | `DynArray[Bounty]` | id = index; escrow amount, window, status, winner, pending payout, challenge flag |
 | `claims` | `DynArray[Claim]` | append-only audit trail of every verdict |
 | `evaluated` | `TreeMap[str, u256]` | `"bounty:pr"` → judged once (prevents LLM re-rolls) |
 | `earned`, `wins` | `TreeMap[Address, u256]` | contributor reputation |
-| `total_escrowed`, `total_paid` | `u256` | protocol accounting |
+| `total_escrowed`, `total_paid`, `total_refunded` | `u256` | protocol accounting |
+| `contributions` | `TreeMap[str, u256]` | `"bounty:0xaddr"` → funder's escrowed amount |
+| `claim_index` | `TreeMap[str, u256]` | `"bounty:k"` → index in `claims` (O(k) listing) |
+| `challenges`, `challenge_index` | `DynArray[Challenge]`, `TreeMap[str, u256]` | appeal records |
+| `rejections`, `overturned` | `TreeMap[Address, u256]` | richer reputation |
 
 ## Why the consensus design is safe
 
@@ -62,12 +84,15 @@ sequenceDiagram
 | Someone claims another dev's merged PR | PR body must contain `proofbounty:<claimant address>` — only the PR author controls the body |
 | Re-rolling the LLM until it says yes | Each `(bounty, PR)` pair is judged at most once |
 | Old PR reused for a new bounty | PR must be merged inside `[created_at, deadline]` |
-| Sponsor rug-pulls after a PR is merged | Cancellation only possible after the deadline |
+| Sponsor rug-pulls after a PR is merged | Cancellation only after the deadline **and only while OPEN** (not during a challenge window) |
+| Funder self-deals a crowdfunded bounty | Funders cannot claim |
+| Griefing via cheap challenges | Bond ≥ 10% of current reward, paid to the contributor if the appeal upholds |
+| Endless appeals | One challenge per pending payout |
+| Refund loops / double refunds | Pull-based `claim_refund`, contribution zeroed before transfer |
 | Prompt/state bloat by leader | Summary capped at 400 chars and checked by validators |
 
-## Known limitations (addressed in the v2 milestone)
+## Known limitations / next milestone ideas
 
-- One payout per bounty; no crowdfunding of a bounty.
-- No challenge window: an accepted verdict pays immediately.
-- No events for indexers.
-- GitHub unauthenticated API limit (60 req/h per validator IP) — fine for testnet volume.
+- GitHub unauthenticated API limit (60 req/h per validator IP) — fine for testnet; a keyless relay (see the Tools submission) would lift it.
+- Single winner per bounty; split payouts for multi-PR work are a natural v3.
+- Events are emitted but not yet consumed by an indexer.

@@ -9,7 +9,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { BountyDetail } from "./BountyDetail";
 
-const FILTERS: (BountyStatus | "ALL")[] = ["OPEN", "PAID", "CANCELLED", "ALL"];
+const FILTERS: (BountyStatus | "ALL")[] = ["OPEN", "PENDING", "PAID", "CANCELLED", "ALL"];
 
 export function BountyList() {
   const { data, isLoading, isError, error } = useBounties();
@@ -55,7 +55,7 @@ export function BountyList() {
                   <Badge variant={b.status === "OPEN" ? "default" : "secondary"}>{b.status}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {b.repo}#{b.issue_number} · {b.claim_count} claim(s) ·{" "}
+                  {b.repo}#{b.issue_number} · {b.claim_count} claim(s) · {b.funder_count} funder(s) ·{" "}
                   {b.status === "OPEN" ? timeLeft(b.deadline) : "closed"}
                 </p>
               </div>
